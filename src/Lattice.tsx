@@ -9,6 +9,8 @@ export function Lattice(){
   const ref = useRef<Mesh>(null)
   useFrame((delta) =>{
     if(ref && ref.current){
+      const t = performance.now()
+      //ref.current.position.x = Math.sin(t/1000)
       ref.current.material.uniforms.time.value += 0.01 
     }
   })
@@ -18,10 +20,9 @@ export function Lattice(){
         <boxGeometry args={[2,2,2]} />
         <rayMarchLatticeMaterial
           key={RayMarchLatticeMaterial.key}
-          ro={new Vector3(0,0,-3)}
-          //rd={new Vector3(0,0,-1)}
           color="blue"
           time={1}
+          transparent={true}
         />
       </mesh>
   )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { GizmoHelper, OrbitControls } from '@react-three/drei'
 import './App.css'
 import { Lattice } from './Lattice'
 
@@ -10,6 +10,7 @@ function App() {
   return (
     <Canvas>
       <Lattice />
+      <gridHelper />
       <OrbitControls />
     </Canvas>
   )
