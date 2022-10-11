@@ -13,63 +13,31 @@ varying vec3 hitPos; // hit position
 // Baseline Reference (Unity/hlsl)
 //https://www.youtube.com/watch?v=S8AWd66hoCo&t=169s
 
-struct Intersection {
-  vec3 position;
-  vec3 normal;
-  float dist;
-};
 
-Intersection SphereIntersects(vec3 ro, vec3 rd,vec3 p,float r){
-  Intersection i;
-  vec3 L = p - ro;
-  float ll = length(L);
-  float tc = dot(L,rd);
-  if(tc < 0.0){
-    i.dist = MAX_DIST;
-    return i;
-  }
-  float d = sqrt(ll*ll - tc*tc);
-  float t1c = sqrt(r*r - d*d);
-  float dp = t1c-tc;
-  vec3 pi = ro + rd * dp;
-  i.position = pi; // point of intersection
-  i.normal = normalize(pi-p);  // normal of intersection
-  i.dist = dp; // distance from ro to intersection
-  return i;
+// https://iquilezles.org/articles/distfunctions/
+float sdCapsule( vec3 p, vec3 a, vec3 b, float r ){
+  vec3 pa = p - a, ba = b - a;
+  float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+  return length( pa - ba*h ) - r;
 }
 
-Intersection CylinderIntersects(vec3 ro, vec3 rd,vec3 l0,vec3 l1,float r){
-  // does the ray r0->p intersect cylinder l0=>l1? with radius r?
-  // or does it intersect the sphere at l0/r or l1/r?
-  // if so return depth
-  // if not, return MAX_DIST
-  Intersection i0 = SphereIntersects(ro,rd,l0,r);
-  Intersection i1 = SphereIntersects(ro,rd,l1,r);
-  if(i0.dist < i1.dist ) return i0;
-  return i1;
-}
-
-Intersection GetIntersection(vec3 ro, vec3 rd){
-  Intersection d;
-  d.dist = MAX_DIST;
-
-  //vec3 points[] = vec3[3](vec3(0.9,0.0,0.0),vec3(0.0,0.9,0.0),vec3(0.0,0.0,0.9));
-  vec3 points[] = vec3[1](vec3(0.0,0.0,0.0));
-
-  for(int i=0;i<points.length();i++){
-    //vec3 data = texture2D( latticeDataTex, vec2(i*2,0) ).xyz;
-    vec3 data = points[i];
-    Intersection d1 = SphereIntersects(ro,rd,data,0.3);
-    if(d1.dist < d.dist ) d = d1;
-  }
-
-  return d;
+vec3 GetDataPoint(int i){
+  // i is the index of our point
+  vec2 segUV = vec2(float(i)/float(segments*2),0);
+  return texture2D( latticeDataTex, segUV).xyz;
 }
 
 float GetDist(vec3 p){
-  // Torus
-  float d = length(p) - .5;
-  d = length(vec2(length(p.xz)-.5,p.y)) - .1;
+  float d = MAX_DIST;
+
+  // TODO how can we efficiently not compute 
+  // every SDF for every segment every step for every fragment!!
+  for(int i=0;i<32;i++){
+    vec3 a = GetDataPoint(i);
+    vec3 b = GetDataPoint(i+1);
+    float d1 = sdCapsule(p,a,b,radius);
+    if(d1 < d) d = d1;
+  }
   return d;
 }
 
@@ -115,11 +83,9 @@ void main() {
     gl_FragColor.rgb = n;
     gl_FragColor.a = 1.0;
   }
-
-  Intersection i = GetIntersection(ro,rd);
-  if(i.dist < MAX_DIST){
-    gl_FragColor.rgb = i.normal;
-    gl_FragColor.a = 1.0;
-  }
-
 }
+
+
+// References
+// https://iquilezles.org/articles/distfunctions/
+// https://iquilezles.org/articles/sdfbounding/

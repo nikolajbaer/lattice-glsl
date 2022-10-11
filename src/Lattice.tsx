@@ -1,5 +1,5 @@
-import { useFrame,extend } from "@react-three/fiber"
-import { FloatType,RGBFormat,DataTexture,Mesh,Vector3 } from 'three'
+import { useFrame } from "@react-three/fiber"
+import { FloatType,DataTexture,Mesh,Vector3, RGBAFormat, UVMapping } from 'three'
 import { useMemo,useRef } from "react"
 import vertexShader from './vertex.glsl?raw'
 import fragmentShader from './fragment.glsl?raw'
@@ -7,14 +7,11 @@ import fragmentShader from './fragment.glsl?raw'
 export function Lattice(props:{latticeData:Vector3[],s:number,r:number}){
   const latticeDataTex = useMemo(() => {
     //https://threejs.org/docs/#api/en/textures/DataTexture
-    const data = new Float32Array(props.latticeData.length*3)
+    const data:number[] = []
     props.latticeData.forEach((p,i)=>{
-      data[i*3] = p.x
-      data[i*3+1] = p.y
-      data[i*3+2] = p.z
+      data.push(p.x,p.y,p.z,1.0);
     })
-    const w = props.latticeData.length*3
-    const tex = new DataTexture(data,w,1,RGBFormat,FloatType)
+    const tex = new DataTexture(Float32Array.from(data),props.latticeData.length,1,RGBAFormat,FloatType,UVMapping)
     tex.needsUpdate = true
     return tex
   },[props.latticeData])
