@@ -1,9 +1,8 @@
 import { useFrame,extend } from "@react-three/fiber"
 import { FloatType,RGBFormat,DataTexture,Mesh,Vector3 } from 'three'
 import { useMemo,useRef } from "react"
-import { RayMarchLatticeMaterial } from "./RayMarchLatticeMaterial"
-
-extend({RayMarchLatticeMaterial})
+import vertexShader from './vertex.glsl?raw'
+import fragmentShader from './fragment.glsl?raw'
 
 export function Lattice(props:{latticeData:Vector3[],s:number,r:number}){
   const latticeDataTex = useMemo(() => {
@@ -20,6 +19,14 @@ export function Lattice(props:{latticeData:Vector3[],s:number,r:number}){
     return tex
   },[props.latticeData])
 
+  const uniforms = useMemo(() => {
+    return {
+      radius:{value:props.r},
+      latticeDataTex:{value:latticeDataTex},
+      segments:{value:props.latticeData.length/2},
+    }
+  },[])
+
   const ref = useRef<Mesh>(null)
   useFrame((delta) =>{
 //    if(ref && ref.current){
@@ -30,12 +37,11 @@ export function Lattice(props:{latticeData:Vector3[],s:number,r:number}){
   return (
       <mesh ref={ref} frustumCulled={false}>
         <boxGeometry args={[props.s,props.s,props.s]} />
-        <rayMarchLatticeMaterial
-          key={RayMarchLatticeMaterial.key}
+        <shaderMaterial
+          fragmentShader={fragmentShader}
+          vertexShader={vertexShader}
           transparent={true}
-          radius={props.r}
-          latticeDataTex={latticeDataTex}
-          segments={props.latticeData.length/2}
+          uniforms={uniforms}
         />
       </mesh>
   )
