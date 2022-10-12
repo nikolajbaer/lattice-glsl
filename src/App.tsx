@@ -10,7 +10,7 @@ function App() {
   const linesRef = useRef<BufferGeometry>(null)
   const n = 5 
   const s = 2
-  const r = 0.05 
+  const r = 0.025 
 
   const lattice = useMemo<Vector3[]>(()=>{
     const data = []

@@ -5,13 +5,26 @@ import vertexShader from './vertex.glsl?raw'
 import fragmentShader from './fragment.glsl?raw'
 
 export function Lattice(props:{latticeData:Vector3[],s:number,r:number}){
+  // Identify width required for 2d data tex, and increase to nearest power of 2
+  // per https://stackoverflow.com/a/466256
+  const base_width = Math.ceil(Math.sqrt(props.latticeData.length))
+  const width = Math.pow(2,Math.ceil(Math.log(base_width)/Math.log(2)))
+  console.log(`Texture Width is ${width} for ${props.latticeData.length}`)
+
   const latticeDataTex = useMemo(() => {
     //https://threejs.org/docs/#api/en/textures/DataTexture
-    const data:number[] = []
+    const data:Float32Array = new Float32Array(width*4*width)
     props.latticeData.forEach((p,i)=>{
-      data.push(p.x,p.y,p.z,1.0);
+      data[i*4] = p.x;
+      data[i*4+1] = p.y;
+      data[i*4+2] = p.z;
+      data[i*4+3] = 1.0;
     })
-    const tex = new DataTexture(Float32Array.from(data),props.latticeData.length,1,RGBAFormat,FloatType,UVMapping)
+    for(var i=base_width;i<width;i++){
+      data[i] = 1.0;
+    }
+    console.log(`Data is ${width}x${width} (${width*width}) ${data.length} length`)
+    const tex = new DataTexture(data,width,width,RGBAFormat,FloatType,UVMapping)
     tex.needsUpdate = true
     return tex
   },[props.latticeData])
@@ -21,6 +34,7 @@ export function Lattice(props:{latticeData:Vector3[],s:number,r:number}){
       radius:{value:props.r},
       latticeDataTex:{value:latticeDataTex},
       segments:{value:props.latticeData.length/2},
+      width:{value:width},
     }
   },[])
 

@@ -2,6 +2,7 @@ precision highp float;
 uniform float radius;
 uniform sampler2D latticeDataTex;
 uniform int segments;
+uniform int width;
 varying vec2 vUv;
 varying vec3 ro; // ray origin
 varying vec3 hitPos; // hit position
@@ -10,21 +11,19 @@ varying vec3 hitPos; // hit position
 #define MAX_DIST 100.0
 #define SURF_DIST 0.001
 
-// Baseline Reference (Unity/hlsl)
-//https://www.youtube.com/watch?v=S8AWd66hoCo&t=169s
-
-
-// https://iquilezles.org/articles/distfunctions/
 float sdCapsule( vec3 p, vec3 a, vec3 b, float r ){
   vec3 pa = p - a, ba = b - a;
   float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
   return length( pa - ba*h ) - r;
 }
 
-vec3 GetDataPoint(int i){
-  // i is the index of our point
-  vec2 segUV = vec2(float(i)/float(segments*2),0);
-  return texture2D( latticeDataTex, segUV).xyz;
+// Get the vec4 at index "i" from a 2d texture "text with width "t_width"
+vec4 GetDataPoint(int i,sampler2D tex,int t_width){
+  float w = float(t_width);
+  float x = floor(float(i%t_width))/w;
+  float y = floor(float(i)/w)/w;
+  vec2 segUV = vec2(x,y);
+  return texture2D( tex, segUV);
 }
 
 float GetDist(vec3 p){
@@ -32,9 +31,9 @@ float GetDist(vec3 p){
 
   // TODO how can we efficiently not compute 
   // every SDF for every segment every step for every fragment!!
-  for(int i=0;i<32;i++){
-    vec3 a = GetDataPoint(i);
-    vec3 b = GetDataPoint(i+1);
+  for(int i=0;i<segments*2;i+=2){
+    vec3 a = GetDataPoint(i,latticeDataTex,width).xyz;
+    vec3 b = GetDataPoint(i+1,latticeDataTex,width).xyz;
     float d1 = sdCapsule(p,a,b,radius);
     if(d1 < d) d = d1;
   }
@@ -86,6 +85,15 @@ void main() {
 }
 
 
-// References
-// https://iquilezles.org/articles/distfunctions/
-// https://iquilezles.org/articles/sdfbounding/
+/*
+## References ##
+
+Ray Marching/SDF
+https://iquilezles.org/articles/distfunctions/
+https://iquilezles.org/articles/sdfbounding/
+
+
+Unity example on doing it for a specific object with camera pos, etc.
+https://www.youtube.com/watch?v=S8AWd66hoCo&t=169s
+
+*/
